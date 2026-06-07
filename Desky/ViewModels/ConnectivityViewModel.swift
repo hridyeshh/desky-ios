@@ -7,6 +7,7 @@ import Observation
 @MainActor
 final class ConnectivityViewModel {
     var isConnected = false
+    var hasChecked = false
 
     private var pollingTask: Task<Void, Never>?
 
@@ -20,6 +21,7 @@ final class ConnectivityViewModel {
                 } else {
                     self?.isConnected = false
                 }
+                self?.hasChecked = true
                 try? await Task.sleep(for: .seconds(3))
             }
         }

@@ -22,7 +22,10 @@ struct ContentView: View {
             ZStack(alignment: .bottom) {
                 Theme.bg.ignoresSafeArea()
 
-                if viewModel.isPoweredOn {
+                if splashDone && connectivity.hasChecked && !connectivity.isConnected {
+                    DisplayOfflineView()
+                        .transition(.opacity)
+                } else if viewModel.isPoweredOn {
                     VStack(spacing: 0) {
                         // Leave room for the morphed power button (top-left).
                         Spacer().frame(height: 44)
@@ -67,7 +70,9 @@ struct ContentView: View {
                 }
 
                 // ── Power button layer (morphs between states) ───────────────
-                powerButtonLayer
+                if connectivity.isConnected {
+                    powerButtonLayer
+                }
             }
             .navigationTitle("")
             .toolbar { if viewModel.isPoweredOn { toolbarContent } }
@@ -80,6 +85,7 @@ struct ContentView: View {
             }
             .animation(.easeInOut(duration: 0.3), value: viewModel.successScreen)
             .animation(powerSpring, value: viewModel.isPoweredOn)
+            .animation(.easeInOut(duration: 0.4), value: connectivity.isConnected)
             .sheet(item: $previewSlot) { slot in
                 ScreenPreviewSheet(screenIndex: slot.id, widget: slot.widget)
             }
@@ -266,6 +272,45 @@ struct ContentView: View {
                 GridIcon()
             }
         }
+    }
+}
+
+// MARK: - Display offline screen
+
+private struct DisplayOfflineView: View {
+    @State private var pulsing = false
+
+    var body: some View {
+        ZStack {
+            Theme.bg.ignoresSafeArea()
+            VStack(spacing: 28) {
+                ZStack {
+                    Circle()
+                        .stroke(Theme.muted.opacity(pulsing ? 0.15 : 0.05), lineWidth: 40)
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(pulsing ? 1.15 : 1.0)
+                    Circle()
+                        .stroke(Theme.muted.opacity(0.2), lineWidth: 1.5)
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "display")
+                        .font(.system(size: 32, weight: .thin))
+                        .foregroundColor(Theme.muted)
+                }
+                .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: pulsing)
+
+                VStack(spacing: 10) {
+                    Text("DISPLAY OFFLINE")
+                        .font(.pressStart(9))
+                        .foregroundColor(Theme.muted)
+                    Text("Waiting for desk display to connect…")
+                        .font(.system(size: 12))
+                        .foregroundColor(Theme.dim)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(32)
+        }
+        .onAppear { pulsing = true }
     }
 }
 
