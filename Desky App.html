@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desky — iOS App Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; }
+  ::-webkit-scrollbar { display: none; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+/* ─── tokens ─────────────────────────────────────────────── */
+const BG='#0A0A0A', CARD='#111111', BG3='#181818';
+const FG='#F2F2F2', MUTED='#6B6B6B', DIM='#3A3A3A', LINE='#222222';
+const AMBER='#E8C97A', COOL='#7AC8E8', PINK='#FC3C44';
+const GREEN='#5BD17A', PURPLE='#A47AE8';
+const P2P = "'Press Start 2P', monospace";
+const VT  = "'VT323', monospace";
+
+const WIDGETS = [
+  {key:'clock',   name:'CLOCK',   desc:'Time & date',      accent:AMBER},
+  {key:'weather', name:'WEATHER', desc:'Bangalore live',   accent:COOL},
+  {key:'music',   name:'MUSIC',   desc:'Now playing',      accent:PINK},
+  {key:'tasks',   name:'TASKS',   desc:'Your to-dos',      accent:GREEN},
+  {key:'gif',     name:'GIF',     desc:'Animated scene',   accent:PURPLE},
+];
+
+/* ─── pixel icon bitmaps  (8×8, 1=accent, 2=FG) ──────────── */
+const BITMAPS = {
+  clock:[
+    [0,0,1,1,1,1,0,0],
+    [0,1,0,0,0,0,1,0],
+    [0,1,0,0,1,0,1,0],
+    [0,1,0,0,1,1,0,0],
+    [0,1,0,0,0,0,1,0],
+    [0,1,0,0,0,0,1,0],
+    [0,0,1,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0],
+  ],
+  weather:[
+    [0,0,1,0,0,1,0,0],
+    [0,0,0,0,0,0,0,0],
+    [1,0,0,1,1,0,0,1],
+    [0,0,1,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0],
+    [1,0,0,1,1,0,0,1],
+    [0,0,0,0,0,0,0,0],
+    [0,0,1,0,0,1,0,0],
+  ],
+  music:[
+    [0,0,1,1,1,1,1,0],
+    [0,0,1,0,0,0,1,0],
+    [0,0,1,0,0,0,1,0],
+    [0,0,1,0,0,0,1,0],
+    [0,0,1,0,0,0,1,0],
+    [1,1,1,0,0,1,1,0],
+    [1,1,0,0,0,1,1,0],
+    [0,0,0,0,0,0,0,0],
+  ],
+  tasks:[
+    [0,0,0,0,0,0,0,0],
+    [1,1,0,2,2,2,2,0],
+    [1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [2,2,0,2,2,2,2,0],
+    [2,2,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+  ],
+  gif:[
+    [1,1,0,0,0,0,1,1],
+    [1,1,0,0,0,0,1,1],
+    [0,0,1,0,0,0,0,0],
+    [0,0,1,1,0,0,0,0],
+    [0,0,1,1,1,0,0,0],
+    [0,0,1,1,0,0,0,0],
+    [0,0,1,0,0,0,0,0],
+    [1,1,0,0,0,0,1,1],
+  ],
+};
+
+/* ─── PixelIcon ───────────────────────────────────────────── */
+function PixelIcon({bitmap, accent, cell=4}) {
+  const w = bitmap[0].length*cell, h = bitmap.length*cell;
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}
+         style={{imageRendering:'pixelated', display:'block', flexShrink:0}}>
+      {bitmap.flatMap((row,r) => row.map((v,c) => !v ? null :
+        <rect key={r+'-'+c} x={c*cell} y={r*cell} width={cell} height={cell}
+              fill={v===1 ? accent : FG}/>
+      ))}
+    </svg>
+  );
+}
+
+/* ─── slot mini-previews ──────────────────────────────────── */
+function ClockPreview() {
+  return (
+    <div style={{width:'100%',height:'100%',background:BG,padding:'8px 6px 6px',
+                 display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{fontFamily:P2P,fontSize:6,color:MUTED,lineHeight:2}}>IST</div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+                   justifyContent:'center',gap:6}}>
+        <div style={{fontFamily:VT,fontSize:32,color:AMBER,lineHeight:1,
+                     fontVariantNumeric:'tabular-nums'}}>14:32</div>
+        <div style={{fontFamily:P2P,fontSize:5,color:FG}}>SATURDAY</div>
+        <div style={{fontFamily:P2P,fontSize:5,color:AMBER}}>06 JUN</div>
+      </div>
+      <div style={{height:3,background:LINE}}>
+        <div style={{width:'47%',height:'100%',background:AMBER}}/>
+      </div>
+    </div>
+  );
+}
+
+function MusicPreview() {
+  return (
+    <div style={{width:'100%',height:'100%',background:BG,padding:'8px 6px 6px',
+                 display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{fontFamily:P2P,fontSize:5,color:PINK}}>NOW PLAYING</div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+                   justifyContent:'center',gap:6}}>
+        <PixelIcon bitmap={BITMAPS.music} accent={PINK} cell={3}/>
+        <div style={{fontFamily:P2P,fontSize:5,color:FG,width:'90%',overflow:'hidden',
+                     whiteSpace:'nowrap',textOverflow:'ellipsis',textAlign:'center'}}>
+          Midnight City
+        </div>
+        <div style={{fontFamily:P2P,fontSize:4,color:MUTED}}>M83</div>
+      </div>
+      <div style={{height:3,background:LINE}}>
+        <div style={{width:'34%',height:'100%',background:PINK}}/>
+      </div>
+    </div>
+  );
+}
+
+function WeatherPreview() {
+  return (
+    <div style={{width:'100%',height:'100%',background:BG,padding:'8px 6px 6px',
+                 display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{fontFamily:P2P,fontSize:5,color:MUTED}}>BANGALORE</div>
+      <div style={{flex:1,display:'flex',alignItems:'center',
+                   justifyContent:'space-between',padding:'4px 0'}}>
+        <div style={{fontFamily:VT,fontSize:34,color:COOL,lineHeight:1,
+                     fontVariantNumeric:'tabular-nums'}}>28°</div>
+        <PixelIcon bitmap={BITMAPS.weather} accent={COOL} cell={3.5}/>
+      </div>
+      <div style={{fontFamily:P2P,fontSize:4,color:FG}}>PARTLY CLOUDY</div>
+    </div>
+  );
+}
+
+function TasksPreview() {
+  const items = [
+    {t:'Solder displays',done:true},
+    {t:'Deploy backend', done:true},
+    {t:'Wire Last.fm',   done:false},
+  ];
+  return (
+    <div style={{width:'100%',height:'100%',background:BG,padding:'8px 6px 6px',
+                 display:'flex',flexDirection:'column',gap:4,overflow:'hidden'}}>
+      <div style={{fontFamily:P2P,fontSize:5,color:MUTED,marginBottom:4}}>TASKS</div>
+      {items.map((it,i) => (
+        <div key={i} style={{display:'flex',alignItems:'center',gap:5}}>
+          <div style={{width:8,height:8,flexShrink:0,
+                       background:it.done?GREEN:'transparent',
+                       border:it.done?'none':`1px solid ${DIM}`}}/>
+          <div style={{fontFamily:P2P,fontSize:4,
+                       color:it.done?DIM:FG,
+                       textDecoration:it.done?'line-through':'none',
+                       overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>
+            {it.t}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GifPreview() {
+  /* simplified 5×7 pixel sunset, same logic as gif.html */
+  const palette = ['#0b1226','#2a2350','#9a4257','#e69a4a',AMBER,'#15161f','#0c0c0c'];
+  const grid = [
+    [0,0,0,0,0],
+    [0,1,0,2,0],
+    [0,2,3,2,0],
+    [3,3,4,3,3],
+    [5,4,4,4,5],
+    [6,5,4,5,6],
+    [6,6,6,6,6],
+  ];
+  const cw=110/5, ch=147/7;
+  return (
+    <div style={{width:'100%',height:'100%',position:'relative',overflow:'hidden'}}>
+      <svg width="110" height="147" viewBox="0 0 110 147" style={{imageRendering:'pixelated'}}>
+        {grid.flatMap((row,r)=>row.map((v,c)=>
+          <rect key={r+'-'+c} x={c*cw} y={r*ch} width={cw+1} height={ch+1} fill={palette[v]}/>
+        ))}
+      </svg>
+      <div style={{position:'absolute',bottom:6,left:6,fontFamily:P2P,fontSize:5,color:FG,
+                   background:'rgba(10,10,10,0.8)',padding:'3px 5px'}}>GIF</div>
+    </div>
+  );
+}
+
+function DropTarget({accent}) {
+  return (
+    <div style={{width:'100%',height:'100%',background:accent+'12',
+                 display:'flex',flexDirection:'column',alignItems:'center',
+                 justifyContent:'center',gap:8}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:3,width:18,height:18}}>
+        {[0,1,2,3].map(i=><div key={i} style={{background:accent+'60'}}/>)}
+      </div>
+      <div style={{fontFamily:P2P,fontSize:5,color:accent}}>DROP HERE</div>
+    </div>
+  );
+}
+
+/* ─── ScreenSlot ──────────────────────────────────────────── */
+function ScreenSlot({accent, children, label, dim=false, active=false, success=false, badge=false}) {
+  const shadow = success
+    ? `0 0 0 2px ${GREEN}, 0 0 28px ${GREEN}80`
+    : active
+      ? `0 0 0 2px ${accent}, 0 0 28px ${accent}90`
+      : `0 0 0 1.5px ${accent}50, 0 0 12px ${accent}28`;
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+      <div style={{position:'relative'}}>
+        <div style={{width:110,height:147,borderRadius:16,overflow:'hidden',
+                     boxShadow:shadow, opacity:dim?0.3:1,
+                     transition:'opacity 0.2s, box-shadow 0.2s'}}>
+          {children}
+        </div>
+        {badge && (
+          <div style={{position:'absolute',top:-8,right:-8,width:22,height:22,
+                       background:GREEN,borderRadius:'50%',
+                       display:'flex',alignItems:'center',justifyContent:'center',
+                       border:`2px solid ${BG}`}}>
+            <svg width={12} height={12} viewBox="0 0 12 12" style={{imageRendering:'pixelated'}}>
+              <rect x={1} y={5} width={2} height={2} fill={BG}/>
+              <rect x={3} y={7} width={2} height={2} fill={BG}/>
+              <rect x={5} y={5} width={2} height={2} fill={BG}/>
+              <rect x={7} y={3} width={2} height={2} fill={BG}/>
+              <rect x={9} y={1} width={2} height={2} fill={BG}/>
+            </svg>
+          </div>
+        )}
+      </div>
+      <div style={{fontFamily:P2P,fontSize:7,color:dim?DIM:MUTED}}>{label}</div>
+    </div>
+  );
+}
+
+/* ─── WidgetCard ──────────────────────────────────────────── */
+function WidgetCard({widget, lifted=false, style:extra={}}) {
+  const {name,desc,accent,key} = widget;
+  return (
+    <div style={{
+      width:136, height:84, background:CARD, borderRadius:12, flexShrink:0,
+      border:`1px solid ${lifted ? accent : LINE}`,
+      boxShadow: lifted ? `0 10px 32px ${accent}40, 0 0 0 1px ${accent}` : 'none',
+      transform: lifted ? 'scale(1.07) rotate(-2deg)' : 'scale(1)',
+      padding:'14px 12px 12px', display:'flex', flexDirection:'column',
+      gap:8, position:'relative', ...extra
+    }}>
+      <div style={{display:'flex',alignItems:'center',gap:9}}>
+        <PixelIcon bitmap={BITMAPS[key]} accent={accent} cell={3}/>
+        <div style={{fontFamily:P2P,fontSize:7,color:FG}}>{name}</div>
+      </div>
+      <div style={{fontFamily:'system-ui,-apple-system,sans-serif',fontSize:11,
+                   color:MUTED,lineHeight:1.4}}>{desc}</div>
+      <div style={{position:'absolute',bottom:10,right:10,display:'flex',flexDirection:'column',gap:3}}>
+        {[0,1,2].map(i=><div key={i} style={{width:18,height:2,background:DIM}}/>)}
+      </div>
+    </div>
+  );
+}
+
+/* ─── shared chrome ───────────────────────────────────────── */
+function StatusBar() {
+  return (
+    <div style={{height:54,display:'flex',alignItems:'flex-end',justifyContent:'space-between',
+                 padding:'0 28px 10px',fontFamily:'system-ui',fontSize:15,fontWeight:600,color:FG}}>
+      <span>9:41</span>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'flex-end',gap:2}}>
+          {[6,9,12,15].map((h,i)=>(
+            <div key={i} style={{width:4,height:h,background:i<3?FG:DIM,borderRadius:1}}/>
+          ))}
+        </div>
+        <svg width={18} height={14} viewBox="0 0 18 14">
+          {[[0,10,18,14],[3,7,15,14],[6,4,12,14]].map(([x,y,x2,y2],i)=>(
+            <path key={i} d={`M${x} ${y2} Q9 ${y} ${x2} ${y2}`}
+                  fill="none" stroke={i===0?MUTED:FG} strokeWidth={2}
+                  strokeLinecap="round"/>
+          ))}
+        </svg>
+        <div style={{display:'flex',alignItems:'center',gap:1}}>
+          <div style={{width:26,height:13,border:`1px solid ${FG}60`,borderRadius:3,
+                       padding:'2px',display:'flex',gap:2}}>
+            <div style={{width:'75%',background:GREEN,borderRadius:1}}/>
+          </div>
+          <div style={{width:2,height:7,background:FG+'50',borderRadius:'0 2px 2px 0'}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NavBar({right, back=false}) {
+  return (
+    <div style={{height:52,display:'flex',alignItems:'center',justifyContent:'space-between',
+                 padding:'0 24px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:12}}>
+        {back && (
+          <svg width={20} height={20} viewBox="0 0 20 20">
+            <rect x={2} y={9} width={14} height={2} fill={FG}/>
+            <rect x={2} y={7} width={4} height={2} fill={FG}/>
+            <rect x={2} y={11} width={4} height={2} fill={FG}/>
+          </svg>
+        )}
+        <div style={{fontFamily:P2P,fontSize:13,color:FG,letterSpacing:1}}>
+          {back ? 'settings' : 'desky'}
+        </div>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function GridIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 22 22" style={{imageRendering:'pixelated'}}>
+      {[[2,2],[12,2],[2,12],[12,12]].map(([x,y],i)=>(
+        <rect key={i} x={x} y={y} width={8} height={8} fill={MUTED}/>
+      ))}
+    </svg>
+  );
+}
+
+function SectionLabel({children}) {
+  return (
+    <div style={{fontFamily:P2P,fontSize:7,color:MUTED,letterSpacing:2,
+                 marginBottom:16,lineHeight:2}}>{children}</div>
+  );
+}
+
+function Divider({my=32}) {
+  return <div style={{height:1,background:LINE,margin:`${my}px 0`}}/>;
+}
+
+/* ─── SCREEN 1 — main ─────────────────────────────────────── */
+function MainScreen() {
+  return (
+    <div style={{width:393,height:852,background:BG,display:'flex',
+                 flexDirection:'column',color:FG,overflow:'hidden'}}>
+      <StatusBar/>
+      <NavBar right={<GridIcon/>}/>
+
+      <div style={{padding:'0 24px',flex:1,display:'flex',flexDirection:'column'}}>
+        {/* slots */}
+        <div style={{marginTop:8}}>
+          <SectionLabel>YOUR SCREENS</SectionLabel>
+          <div style={{display:'flex',gap:9}}>
+            <ScreenSlot accent={AMBER} label="1"><ClockPreview/></ScreenSlot>
+            <ScreenSlot accent={PINK}  label="2"><MusicPreview/></ScreenSlot>
+            <ScreenSlot accent={COOL}  label="3"><WeatherPreview/></ScreenSlot>
+          </div>
+        </div>
+
+        <div style={{flex:1}}/>
+
+        {/* widget library */}
+        <div>
+          <SectionLabel>WIDGETS</SectionLabel>
+          <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:4}}>
+            {WIDGETS.map(w=><WidgetCard key={w.key} widget={w}/>)}
+          </div>
+          <div style={{fontFamily:P2P,fontSize:6,color:DIM,marginTop:14,textAlign:'center'}}>
+            ↑ DRAG A CARD ONTO A SCREEN SLOT
+          </div>
+        </div>
+
+        <div style={{flex:1}}/>
+      </div>
+
+      {/* footer */}
+      <div style={{padding:'0 24px 34px',display:'flex',
+                   justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{width:7,height:7,background:GREEN}}/>
+          <div style={{fontFamily:P2P,fontSize:6,color:MUTED}}>CONNECTED</div>
+        </div>
+        <div style={{fontFamily:P2P,fontSize:6,color:DIM}}>LAST SYNC 12s AGO</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCREEN 2 — dragging ─────────────────────────────────── */
+function DragScreen() {
+  return (
+    <div style={{width:393,height:852,background:BG,display:'flex',
+                 flexDirection:'column',color:FG,overflow:'hidden',position:'relative'}}>
+      <StatusBar/>
+      <NavBar right={<GridIcon/>}/>
+
+      <div style={{padding:'0 24px',flex:1,display:'flex',flexDirection:'column'}}>
+        <div style={{marginTop:8}}>
+          <SectionLabel>YOUR SCREENS</SectionLabel>
+          <div style={{display:'flex',gap:9}}>
+            <ScreenSlot accent={AMBER} label="1" dim><ClockPreview/></ScreenSlot>
+            <ScreenSlot accent={COOL}  label="2" active>
+              <DropTarget accent={COOL}/>
+            </ScreenSlot>
+            <ScreenSlot accent={COOL}  label="3" dim><WeatherPreview/></ScreenSlot>
+          </div>
+        </div>
+
+        <div style={{flex:1}}/>
+
+        <div>
+          <SectionLabel>WIDGETS</SectionLabel>
+          <div style={{display:'flex',gap:10,paddingBottom:4}}>
+            <WidgetCard widget={WIDGETS[0]}/>
+            {/* gap where weather card was */}
+            <div style={{width:136,height:84,borderRadius:12,
+                         border:`1px dashed ${DIM}`,flexShrink:0}}/>
+            <WidgetCard widget={WIDGETS[2]}/>
+            <WidgetCard widget={WIDGETS[3]}/>
+          </div>
+          <div style={{fontFamily:P2P,fontSize:6,color:DIM,marginTop:14,textAlign:'center'}}>
+            ↑ DRAG A CARD ONTO A SCREEN SLOT
+          </div>
+        </div>
+        <div style={{flex:1}}/>
+      </div>
+
+      <div style={{padding:'0 24px 34px',display:'flex',
+                   justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{width:7,height:7,background:GREEN}}/>
+          <div style={{fontFamily:P2P,fontSize:6,color:MUTED}}>CONNECTED</div>
+        </div>
+        <div style={{fontFamily:P2P,fontSize:6,color:DIM}}>LAST SYNC 12s AGO</div>
+      </div>
+
+      {/* ── floating dragged card ── */}
+      <div style={{position:'absolute',top:310,left:106,zIndex:100,pointerEvents:'none'}}>
+        <WidgetCard widget={WIDGETS[1]} lifted/>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCREEN 3 — success ──────────────────────────────────── */
+function SuccessScreen() {
+  return (
+    <div style={{width:393,height:852,background:BG,display:'flex',
+                 flexDirection:'column',color:FG,overflow:'hidden'}}>
+      <StatusBar/>
+      <NavBar right={<GridIcon/>}/>
+
+      <div style={{padding:'0 24px',flex:1,display:'flex',flexDirection:'column'}}>
+        <div style={{marginTop:8}}>
+          <SectionLabel>YOUR SCREENS</SectionLabel>
+          <div style={{display:'flex',gap:9}}>
+            <ScreenSlot accent={AMBER} label="1"><ClockPreview/></ScreenSlot>
+            <ScreenSlot accent={COOL}  label="2" success badge>
+              <WeatherPreview/>
+            </ScreenSlot>
+            <ScreenSlot accent={COOL}  label="3"><WeatherPreview/></ScreenSlot>
+          </div>
+        </div>
+
+        {/* success toast */}
+        <div style={{marginTop:20,padding:'12px 16px',background:GREEN+'18',
+                     border:`1px solid ${GREEN}40`,borderRadius:12,
+                     display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:8,height:8,background:GREEN,flexShrink:0}}/>
+          <div>
+            <div style={{fontFamily:P2P,fontSize:7,color:GREEN,marginBottom:4}}>SCREEN 2 UPDATED</div>
+            <div style={{fontFamily:'system-ui',fontSize:11,color:MUTED}}>
+              Physical screen will refresh in ~5 seconds
+            </div>
+          </div>
+        </div>
+
+        <div style={{flex:1}}/>
+
+        <div>
+          <SectionLabel>WIDGETS</SectionLabel>
+          <div style={{display:'flex',gap:10,paddingBottom:4}}>
+            {WIDGETS.map(w=><WidgetCard key={w.key} widget={w}/>)}
+          </div>
+          <div style={{fontFamily:P2P,fontSize:6,color:DIM,marginTop:14,textAlign:'center'}}>
+            ↑ DRAG A CARD ONTO A SCREEN SLOT
+          </div>
+        </div>
+        <div style={{flex:1}}/>
+      </div>
+
+      <div style={{padding:'0 24px 34px',display:'flex',
+                   justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{width:7,height:7,background:GREEN}}/>
+          <div style={{fontFamily:P2P,fontSize:6,color:MUTED}}>CONNECTED</div>
+        </div>
+        <div style={{fontFamily:P2P,fontSize:6,color:DIM}}>JUST SYNCED</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCREEN 4 — settings ─────────────────────────────────── */
+function Row({label, value, accent}) {
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+                 padding:'14px 0'}}>
+      <div style={{fontFamily:P2P,fontSize:7,color:FG}}>{label}</div>
+      <div style={{fontFamily:'system-ui',fontSize:12,color:accent||MUTED}}>{value}</div>
+    </div>
+  );
+}
+
+function SettingsCard({children, style:extra={}}) {
+  return (
+    <div style={{background:CARD,borderRadius:14,border:`1px solid ${LINE}`,
+                 padding:'0 16px',...extra}}>
+      {React.Children.map(children, (child, i) => (
+        <>
+          {child}
+          {i < React.Children.count(children)-1 &&
+            <div style={{height:1,background:LINE,margin:'0 -16px'}}/>}
+        </>
+      ))}
+    </div>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <div style={{width:393,height:852,background:BG,display:'flex',
+                 flexDirection:'column',color:FG,overflow:'hidden'}}>
+      <StatusBar/>
+      <NavBar back/>
+
+      <div style={{padding:'8px 24px 0',display:'flex',flexDirection:'column',gap:28,overflowY:'auto'}}>
+        {/* backend */}
+        <div>
+          <SectionLabel>BACKEND</SectionLabel>
+          <SettingsCard>
+            <div style={{padding:'14px 0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <div style={{fontFamily:P2P,fontSize:7,color:FG,marginBottom:6}}>API STATUS</div>
+                <div style={{fontFamily:'system-ui',fontSize:11,color:MUTED,letterSpacing:0.3}}>
+                  desky.up.railway.app
+                </div>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:7}}>
+                <div style={{width:7,height:7,background:GREEN}}/>
+                <div style={{fontFamily:P2P,fontSize:7,color:GREEN}}>OK</div>
+              </div>
+            </div>
+            <Row label="LAST SYNCED" value="12 seconds ago"/>
+            <Row label="SCREENS" value="3 active"/>
+          </SettingsCard>
+        </div>
+
+        {/* refresh */}
+        <div style={{background:AMBER+'12',borderRadius:14,border:`1px solid ${AMBER}30`,
+                     padding:'16px',display:'flex',alignItems:'center',justifyContent:'center',
+                     gap:12}}>
+          <PixelIcon bitmap={BITMAPS.clock} accent={AMBER} cell={3}/>
+          <div style={{fontFamily:P2P,fontSize:8,color:AMBER}}>FORCE REFRESH</div>
+        </div>
+
+        {/* display config */}
+        <div>
+          <SectionLabel>DISPLAY CONFIG</SectionLabel>
+          <SettingsCard>
+            <Row label="SCREEN 1" value="Clock"/>
+            <Row label="SCREEN 2" value="Weather"/>
+            <Row label="SCREEN 3" value="Music"/>
+          </SettingsCard>
+        </div>
+
+        {/* about */}
+        <div>
+          <SectionLabel>ABOUT</SectionLabel>
+          <SettingsCard>
+            <div style={{padding:'16px 0'}}>
+              <div style={{fontFamily:P2P,fontSize:9,color:FG,marginBottom:12}}>
+                desky v1.0
+              </div>
+              <div style={{fontFamily:'system-ui',fontSize:13,color:MUTED,lineHeight:1.7}}>
+                Controls your 3-screen Pi desk display. Drag widgets onto
+                screen slots — changes apply within 5 seconds.
+              </div>
+            </div>
+            <Row label="GITHUB" value="hridyeshh/desky" accent={COOL}/>
+            <Row label="BACKEND" value="Railway · Go" accent={MUTED}/>
+          </SettingsCard>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── palette card ────────────────────────────────────────── */
+function PaletteCard() {
+  const swatches = [
+    {name:'BG',     hex:'#0A0A0A', c:BG},
+    {name:'CARD',   hex:'#111111', c:CARD},
+    {name:'MUTED',  hex:'#6B6B6B', c:MUTED},
+    {name:'LINE',   hex:'#222222', c:LINE},
+    {name:'AMBER',  hex:'#E8C97A', c:AMBER},
+    {name:'COOL',   hex:'#7AC8E8', c:COOL},
+    {name:'MUSIC',  hex:'#FC3C44', c:PINK},
+    {name:'GREEN',  hex:'#5BD17A', c:GREEN},
+    {name:'PURPLE', hex:'#A47AE8', c:PURPLE},
+  ];
+  return (
+    <div style={{width:600,background:BG,padding:'28px',display:'flex',
+                 flexDirection:'column',gap:20}}>
+      <div style={{fontFamily:P2P,fontSize:8,color:MUTED,letterSpacing:2}}>COLOR PALETTE</div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+        {swatches.map(s=>(
+          <div key={s.name} style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div style={{width:48,height:48,background:s.c,
+                         border:`1px solid ${s.c===BG?LINE:s.c+'30'}`}}/>
+            <div style={{fontFamily:P2P,fontSize:6,color:FG}}>{s.name}</div>
+            <div style={{fontFamily:P2P,fontSize:6,color:MUTED}}>{s.hex}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── root ────────────────────────────────────────────────── */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <DesignCanvas>
+    <DCSection id="app" title="Desky — iOS App Mockups" subtitle="393 × 852 · iPhone 15 Pro · dark only">
+      <DCArtboard id="s1" label="1 · Main" width={393} height={852}>
+        <MainScreen/>
+      </DCArtboard>
+      <DCArtboard id="s2" label="2 · Dragging" width={393} height={852}>
+        <DragScreen/>
+      </DCArtboard>
+      <DCArtboard id="s3" label="3 · Success" width={393} height={852}>
+        <SuccessScreen/>
+      </DCArtboard>
+      <DCArtboard id="s4" label="4 · Settings" width={393} height={852}>
+        <SettingsScreen/>
+      </DCArtboard>
+      <DCArtboard id="pal" label="Color Palette" width={600} height={160}>
+        <PaletteCard/>
+      </DCArtboard>
+    </DCSection>
+  </DesignCanvas>
+);
+</script>
+</body>
+</html>
