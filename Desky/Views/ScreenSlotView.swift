@@ -4,6 +4,7 @@ struct ScreenSlotView: View {
     let screenIndex: Int
     let widget: Widget?
     var gifURL: String = ""
+    var timerEnd: Int = 0
     var isActive: Bool = false
     var showBadge: Bool = false
     var onTap: (() -> Void)? = nil
@@ -30,7 +31,10 @@ struct ScreenSlotView: View {
                     )
 
                 VStack(spacing: 8) {
-                    if widget == .gif, !gifURL.isEmpty {
+                    if widget == .timer {
+                        TimerCountdownView(end: timerEnd)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if widget == .gif, !gifURL.isEmpty {
                         AsyncImage(url: URL(string: gifURL)) { phase in
                             switch phase {
                             case .success(let image):
@@ -124,6 +128,45 @@ struct ScreenSlotView: View {
     ScreenSlotView(screenIndex: 1, widget: .weather, showBadge: true)
         .padding(40)
         .background(Theme.bg)
+}
+
+// MARK: - Live timer countdown
+
+/// Live MM:SS countdown for a timer slot, driven by a 1s TimelineView.
+/// `end` is the absolute Unix end time (seconds); 0 means not set yet.
+private struct TimerCountdownView: View {
+    let end: Int
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let remaining = end - Int(context.date.timeIntervalSince1970)
+            VStack(spacing: 4) {
+                if end == 0 {
+                    Text("--:--")
+                        .font(.pressStart(13))
+                        .foregroundColor(Theme.green)
+                } else if remaining > 0 {
+                    Text(format(remaining))
+                        .font(.pressStart(13))
+                        .foregroundColor(Theme.green)
+                } else if remaining > -10 {
+                    // Flash "TIME'S UP" for ~10s after hitting zero.
+                    Text("TIME'S UP")
+                        .font(.pressStart(8))
+                        .foregroundColor(Theme.pink)
+                        .opacity(Int(context.date.timeIntervalSince1970) % 2 == 0 ? 1 : 0.25)
+                } else {
+                    Text("DONE")
+                        .font(.pressStart(8))
+                        .foregroundColor(Theme.dim)
+                }
+            }
+        }
+    }
+
+    private func format(_ secs: Int) -> String {
+        String(format: "%02d:%02d", secs / 60, secs % 60)
+    }
 }
 
 // MARK: - Pixel checkmark

@@ -36,7 +36,7 @@ struct WidgetPreviewView: View {
             case .clock: ClockPreview()
             case .weather: WeatherPreview()
             case .music: MusicPreview()
-            case .tasks: TasksPreview()
+            case .timer: TimerPreview()
             case .gif: GifPreview()
             }
         }
@@ -129,41 +129,20 @@ private struct WeatherPreview: View {
     }
 }
 
-private struct TasksPreview: View {
-    private let items: [(String, Bool)] = [
-        ("Solder displays", true),
-        ("Deploy backend", true),
-        ("Wire Last.fm", false),
-    ]
-
+private struct TimerPreview: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("TASKS")
+        VStack(spacing: 6) {
+            Text("TIMER")
                 .font(.pressStart(5))
                 .foregroundStyle(Theme.muted)
-                .padding(.bottom, 4)
-                .padding(.horizontal, 6)
-                .padding(.top, 8)
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                HStack(spacing: 5) {
-                    Rectangle()
-                        .fill(item.1 ? Theme.green : .clear)
-                        .frame(width: 8, height: 8)
-                        .overlay {
-                            if !item.1 {
-                                Rectangle().strokeBorder(Theme.dim, lineWidth: 1)
-                            }
-                        }
-                    Text(item.0)
-                        .font(.pressStart(4))
-                        .foregroundStyle(item.1 ? Theme.dim : Theme.fg)
-                        .strikethrough(item.1)
-                        .lineLimit(1)
-                }
-                .padding(.horizontal, 6)
-            }
+            Spacer(minLength: 0)
+            Text("25:00")
+                .font(.pressStart(14))
+                .foregroundStyle(Theme.green)
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.vertical, 8)
         .background(Theme.bg)
     }
 }
@@ -225,7 +204,7 @@ private struct GifPreview: View {
 #Preview("Clock") { WidgetPreviewView(widget: .clock).frame(width: 110, height: 140).background(Theme.bg) }
 #Preview("Music") { WidgetPreviewView(widget: .music).frame(width: 110, height: 140).background(Theme.bg) }
 #Preview("Weather") { WidgetPreviewView(widget: .weather).frame(width: 110, height: 140).background(Theme.bg) }
-#Preview("Tasks") { WidgetPreviewView(widget: .tasks).frame(width: 110, height: 140).background(Theme.bg) }
+#Preview("Timer") { WidgetPreviewView(widget: .timer).frame(width: 110, height: 140).background(Theme.bg) }
 #Preview("GIF") { WidgetPreviewView(widget: .gif).frame(width: 110, height: 140).background(Theme.bg) }
 
 #Preview("All Widgets") {

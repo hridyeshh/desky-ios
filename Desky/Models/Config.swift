@@ -1,14 +1,18 @@
 import SwiftUI
 
 enum Widget: String, CaseIterable, Codable {
-    case clock, weather, music, tasks, gif
+    case clock, weather, music, timer, gif
+
+    /// Widgets shown as draggable cards in the library. Timer is excluded
+    /// because it needs a duration chosen in its own panel before dropping.
+    static var libraryCases: [Widget] { [.clock, .weather, .music, .gif] }
 
     var displayName: String {
         switch self {
         case .clock:   "CLOCK"
         case .weather: "WEATHER"
         case .music:   "MUSIC"
-        case .tasks:   "TASKS"
+        case .timer:   "TIMER"
         case .gif:     "GIF"
         }
     }
@@ -18,7 +22,7 @@ enum Widget: String, CaseIterable, Codable {
         case .clock:   "Time & date"
         case .weather: "Bangalore live"
         case .music:   "Now playing"
-        case .tasks:   "Your to-dos"
+        case .timer:   "Countdown"
         case .gif:     "Animated scene"
         }
     }
@@ -28,7 +32,7 @@ enum Widget: String, CaseIterable, Codable {
         case .clock:   Theme.amber
         case .weather: Theme.cool
         case .music:   Theme.pink
-        case .tasks:   Theme.green
+        case .timer:   Theme.green
         case .gif:     Theme.purple
         }
     }
@@ -63,15 +67,15 @@ enum Widget: String, CaseIterable, Codable {
              [1,1,1,0,0,1,1,0],
              [1,1,0,0,0,1,1,0],
              [0,0,0,0,0,0,0,0]]
-        case .tasks:
-            [[0,0,0,0,0,0,0,0],
-             [1,1,0,2,2,2,2,0],
-             [1,1,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [2,2,0,2,2,2,2,0],
-             [2,2,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0]]
+        case .timer:
+            [[1,1,1,1,1,1,1,1],
+             [0,1,1,1,1,1,1,0],
+             [0,0,1,1,1,1,0,0],
+             [0,0,0,1,1,0,0,0],
+             [0,0,0,1,1,0,0,0],
+             [0,0,1,1,1,1,0,0],
+             [0,1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1]]
         case .gif:
             [[1,1,0,0,0,0,1,1],
              [1,1,0,0,0,0,1,1],
@@ -93,6 +97,12 @@ struct Config: Codable {
     var gifUrl1: String = ""
     var gifUrl2: String = ""
     var gifUrl3: String = ""
+    var timerEnd1: Int = 0
+    var timerEnd2: Int = 0
+    var timerEnd3: Int = 0
+    var prev1: String = ""
+    var prev2: String = ""
+    var prev3: String = ""
 
     enum CodingKeys: String, CodingKey {
         case screen1, screen2, screen3
@@ -100,6 +110,12 @@ struct Config: Codable {
         case gifUrl1 = "gif_url_1"
         case gifUrl2 = "gif_url_2"
         case gifUrl3 = "gif_url_3"
+        case timerEnd1 = "timer_end_1"
+        case timerEnd2 = "timer_end_2"
+        case timerEnd3 = "timer_end_3"
+        case prev1 = "prev_1"
+        case prev2 = "prev_2"
+        case prev3 = "prev_3"
     }
 
     var isPoweredOn: Bool { powerState.uppercased() != "OFF" }
@@ -119,6 +135,16 @@ struct Config: Codable {
         case 2: gifUrl2
         case 3: gifUrl3
         default: ""
+        }
+    }
+
+    /// Absolute Unix end time (seconds) of the timer on a screen, 0 if none.
+    func timerEnd(for screen: Int) -> Int {
+        switch screen {
+        case 1: timerEnd1
+        case 2: timerEnd2
+        case 3: timerEnd3
+        default: 0
         }
     }
 

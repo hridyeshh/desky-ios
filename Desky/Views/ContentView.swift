@@ -50,6 +50,10 @@ struct ContentView: View {
                         GIFGalleryView(viewModel: viewModel)
                             .padding(.bottom, 8)
 
+                        // ── Timer setup panel ────────────────────────────────
+                        TimerSetupView()
+                            .padding(.bottom, 8)
+
                         // ── Widget library ───────────────────────────────────
                         VStack(alignment: .leading, spacing: 8) {
                             Text("WIDGETS")
@@ -145,13 +149,18 @@ struct ContentView: View {
                         screenIndex: index,
                         widget: widget,
                         gifURL: config.gifURL(for: index),
+                        timerEnd: config.timerEnd(for: index),
                         isActive: draggingOver == index,
                         showBadge: viewModel.successScreen == index,
                         onTap: { previewSlot = PreviewSlot(id: index, widget: widget) }
                     )
                     .dropDestination(for: String.self) { items, _ in
                         guard let raw = items.first else { return false }
-                        if raw.hasPrefix("http") {
+                        if raw.hasPrefix("timer:") {
+                            // Dropped the timer chip carrying its duration.
+                            let mins = Int(raw.dropFirst("timer:".count)) ?? 25
+                            Task { await viewModel.startTimer(screen: index, minutes: mins) }
+                        } else if raw.hasPrefix("http") {
                             // Dropped a GIF URL from the gallery.
                             Task { await viewModel.assignGif(url: raw, screen: index) }
                         } else if let dropped = Widget(rawValue: raw) {

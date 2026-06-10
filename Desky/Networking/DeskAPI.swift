@@ -48,6 +48,14 @@ enum DeskAPI {
         return try await APIClient.post("/api/power", body: Payload(state: state))
     }
 
+    // MARK: - Timer
+
+    /// Starts a countdown on a screen for the given number of minutes.
+    static func startTimer(screen: Int, minutes: Int) async throws -> Config {
+        struct Payload: Encodable { let screen: Int; let minutes: Int }
+        return try await APIClient.post("/api/timer", body: Payload(screen: screen, minutes: minutes))
+    }
+
     // MARK: - Connectivity
 
     struct ConnectivityStatus: Decodable { let status: String }

@@ -143,6 +143,24 @@ class DeskViewModel {
         }
     }
 
+    // MARK: - Timer
+
+    /// Starts a countdown on a screen slot for the given minutes.
+    func startTimer(screen: Int, minutes: Int) async {
+        do {
+            let updated = try await DeskAPI.startTimer(screen: screen, minutes: minutes)
+            loadState = .loaded(updated)
+            isConnected = true
+            updateSyncLabel()
+
+            successScreen = screen
+            try? await Task.sleep(for: .seconds(2))
+            successScreen = nil
+        } catch {
+            isConnected = false
+        }
+    }
+
     // MARK: - Sync label helpers
 
     private func updateSyncLabel() {

@@ -10,7 +10,7 @@ struct WidgetLibraryView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(Widget.allCases, id: \.rawValue) { widget in
+                    ForEach(Widget.libraryCases, id: \.rawValue) { widget in
                         WidgetCardView(widget: widget)
                             .draggable(widget.rawValue)
                     }
