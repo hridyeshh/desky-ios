@@ -1,11 +1,11 @@
 import SwiftUI
 
 enum Widget: String, CaseIterable, Codable {
-    case clock, weather, music, timer, gif
+    case clock, weather, music, timer, gif, quote, pet
 
     /// Widgets shown as draggable cards in the library. Timer is excluded
     /// because it needs a duration chosen in its own panel before dropping.
-    static var libraryCases: [Widget] { [.clock, .weather, .music, .gif] }
+    static var libraryCases: [Widget] { [.clock, .weather, .music, .gif, .quote, .pet] }
 
     var displayName: String {
         switch self {
@@ -14,6 +14,8 @@ enum Widget: String, CaseIterable, Codable {
         case .music:   "MUSIC"
         case .timer:   "TIMER"
         case .gif:     "GIF"
+        case .quote:   "QUOTE"
+        case .pet:     "PET"
         }
     }
 
@@ -24,6 +26,8 @@ enum Widget: String, CaseIterable, Codable {
         case .music:   "Now playing"
         case .timer:   "Countdown"
         case .gif:     "Animated scene"
+        case .quote:   "Daily wisdom"
+        case .pet:     "Feed me!"
         }
     }
 
@@ -34,6 +38,8 @@ enum Widget: String, CaseIterable, Codable {
         case .music:   Theme.pink
         case .timer:   Theme.green
         case .gif:     Theme.purple
+        case .quote:   Theme.amber
+        case .pet:     Theme.green
         }
     }
 
@@ -85,6 +91,24 @@ enum Widget: String, CaseIterable, Codable {
              [0,0,1,1,0,0,0,0],
              [0,0,1,0,0,0,0,0],
              [1,1,0,0,0,0,1,1]]
+        case .quote:
+            [[0,1,1,0,1,1,0,0],
+             [0,1,1,0,1,1,0,0],
+             [0,1,1,0,1,1,0,0],
+             [0,0,1,0,0,1,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0]]
+        case .pet:
+            [[0,1,0,0,0,0,1,0],
+             [1,1,0,0,0,0,1,1],
+             [0,0,0,0,0,0,0,0],
+             [0,0,1,0,0,1,0,0],
+             [0,1,1,0,0,1,1,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,1,1,1,1,0,0],
+             [0,1,1,1,1,1,1,0]]
         }
     }
 }

@@ -38,6 +38,8 @@ struct WidgetPreviewView: View {
             case .music: MusicPreview()
             case .timer: TimerPreview()
             case .gif: GifPreview()
+            case .quote: QuotePreview()
+            case .pet: PetPreview()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -195,6 +197,56 @@ private struct GifPreview: View {
                 .background(Theme.bg.opacity(0.8))
                 .padding(6)
         }
+        .background(Theme.bg)
+    }
+}
+
+private struct QuotePreview: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            PixelIcon(bitmap: Widget.quote.bitmap, accent: Theme.amber, cellSize: 3)
+                .padding(.horizontal, 6)
+                .padding(.top, 8)
+            Spacer(minLength: 0)
+            Text("Stay hungry, stay foolish.")
+                .font(.pressStart(5))
+                .foregroundStyle(Theme.fg)
+                .padding(.horizontal, 6)
+            Spacer(minLength: 0)
+            Text("— STEVE JOBS")
+                .font(.pressStart(4))
+                .foregroundStyle(Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(Theme.bg)
+    }
+}
+
+private struct PetPreview: View {
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("PIXEL")
+                .font(.pressStart(5))
+                .foregroundStyle(Theme.muted)
+                .padding(.top, 8)
+            Spacer(minLength: 0)
+            PixelIcon(bitmap: Widget.pet.bitmap, accent: Theme.green, cellSize: 4)
+            Spacer(minLength: 0)
+            // Happiness bar.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.line)
+                    Capsule().fill(Theme.green).frame(width: geo.size.width * 0.8)
+                }
+            }
+            .frame(height: 4)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bg)
     }
 }

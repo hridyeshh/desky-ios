@@ -1,9 +1,13 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     var viewModel: DeskViewModel
     @State private var isRefreshing = false
     @State private var showWiFiSetup = false
+    @State private var pet: DeskAPI.Pet?
+    @State private var isFeeding = false
+    @State private var feedScale: CGFloat = 1
 
     var body: some View {
         ZStack {
@@ -13,6 +17,7 @@ struct SettingsView: View {
                 VStack(spacing: 16) {
                     backendSection
                     displayConfigSection
+                    petSection
                     provisioningSection
                     forceRefreshButton
                     aboutSection
@@ -22,6 +27,7 @@ struct SettingsView: View {
                 .padding(.bottom, 32)
             }
         }
+        .task { pet = try? await DeskAPI.fetchPet() }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -66,6 +72,109 @@ struct SettingsView: View {
                         .foregroundColor(Theme.dim)
                 }
                 .padding(.vertical, 6)
+            }
+        }
+    }
+
+    // MARK: - Pet section
+
+    private var petSection: some View {
+        VStack(spacing: 12) {
+            sectionCard(title: "YOUR PET") {
+                VStack(spacing: 14) {
+                    Text(pet?.name.uppercased() ?? "PIXEL")
+                        .font(.pressStart(10))
+                        .foregroundColor(Theme.fg)
+                    Text("· \(pet?.state.uppercased() ?? "HAPPY")")
+                        .font(.pressStart(6))
+                        .foregroundColor(petStateColor)
+
+                    PetSprite()
+                        .frame(width: 132, height: 120)
+
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("HAPPINESS")
+                                .font(.pressStart(6))
+                                .foregroundColor(Theme.muted)
+                            Spacer()
+                            Text("\(pet?.happiness ?? 80)")
+                                .font(.pressStart(6))
+                                .foregroundColor(Theme.fg)
+                        }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.line)
+                                Capsule().fill(petBarColor)
+                                    .frame(width: geo.size.width * CGFloat(pet?.happiness ?? 80) / 100)
+                            }
+                        }
+                        .frame(height: 6)
+                        Text("LAST FED \(petLastFedText)")
+                            .font(.pressStart(5))
+                            .foregroundColor(Theme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+            feedButton
+        }
+    }
+
+    private var feedButton: some View {
+        Button(action: feed) {
+            VStack(spacing: 5) {
+                HStack(spacing: 10) {
+                    PixelIcon(bitmap: Widget.pet.bitmap, accent: Theme.bg, cellSize: 3)
+                    Text(isFeeding ? "FED!" : "FEED \(pet?.name.uppercased() ?? "PIXEL")")
+                        .font(.pressStart(9))
+                        .foregroundColor(Theme.bg)
+                }
+                Text("+20 HAPPINESS · RESETS THE HUNGER TIMER")
+                    .font(.pressStart(5))
+                    .foregroundColor(Theme.bg.opacity(0.65))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Theme.amber)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .scaleEffect(feedScale)
+        }
+        .disabled(isFeeding)
+    }
+
+    private var petStateColor: Color {
+        switch pet?.state {
+        case "content": Theme.amber
+        case "sad":     Theme.muted
+        case "sleepy":  Theme.cool
+        default:        Theme.green
+        }
+    }
+
+    private var petBarColor: Color {
+        let h = pet?.happiness ?? 80
+        return h >= 50 ? Theme.green : (h >= 20 ? Theme.amber : Theme.pink)
+    }
+
+    private var petLastFedText: String {
+        guard let h = pet?.hoursSinceFed else { return "—" }
+        return h <= 0 ? "JUST NOW" : "\(h)H AGO"
+    }
+
+    private func feed() {
+        guard !isFeeding else { return }
+        isFeeding = true
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.35)) { feedScale = 1.25 }
+        Task {
+            let updated = try? await DeskAPI.feedPet()
+            await MainActor.run {
+                if let updated { pet = updated }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { feedScale = 1 }
+                isFeeding = false
             }
         }
     }
@@ -283,6 +392,49 @@ struct SettingsView: View {
     let vm = DeskViewModel()
     vm.isConnected = false
     return NavigationStack { SettingsView(viewModel: vm) }
+}
+
+// MARK: - Pet sprite
+
+/// Front-facing pixel hamster (matches the Pi widget + design mockup).
+/// Palette: 1 body, 2 belly, 3 cheek, 4 dark.
+struct PetSprite: View {
+    static let grid: [[Int]] = [
+        [0,0,0,1,1,0,0,1,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,4,1,1,1,1,1,1,4,1,1],
+        [1,3,3,1,1,2,2,1,1,3,3,1],
+        [1,3,3,1,2,2,2,2,1,3,3,1],
+        [1,1,1,1,2,4,4,2,1,1,1,1],
+        [0,1,1,1,2,2,2,2,1,1,1,0],
+        [0,0,1,1,1,2,2,1,1,1,0,0],
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+    ]
+    static let palette: [Int: Color] = [
+        1: Color(hex: "E6A15A"),
+        2: Color(hex: "F5D3A8"),
+        3: Color(hex: "F58DA0"),
+        4: Color(hex: "0A0A0A"),
+    ]
+
+    var body: some View {
+        Canvas { ctx, size in
+            let cols = Self.grid[0].count, rows = Self.grid.count
+            let cell = min(size.width / CGFloat(cols), size.height / CGFloat(rows))
+            let ox = (size.width - cell * CGFloat(cols)) / 2
+            let oy = (size.height - cell * CGFloat(rows)) / 2
+            for (r, row) in Self.grid.enumerated() {
+                for (c, v) in row.enumerated() where v != 0 {
+                    guard let color = Self.palette[v] else { continue }
+                    let rect = CGRect(x: ox + CGFloat(c) * cell, y: oy + CGFloat(r) * cell,
+                                      width: cell + 0.5, height: cell + 0.5)
+                    ctx.fill(Path(rect), with: .color(color))
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Clock pixel icon

@@ -56,6 +56,30 @@ enum DeskAPI {
         return try await APIClient.post("/api/timer", body: Payload(screen: screen, minutes: minutes))
     }
 
+    // MARK: - Pet
+
+    struct Pet: Decodable {
+        let name: String
+        let happiness: Int
+        let state: String
+        let hoursSinceFed: Int
+
+        enum CodingKeys: String, CodingKey {
+            case name, happiness, state
+            case hoursSinceFed = "hours_since_fed"
+        }
+    }
+
+    static func fetchPet() async throws -> Pet {
+        try await APIClient.get("/widget/pet")
+    }
+
+    /// Feeds the pet: resets its hunger clock and bumps happiness.
+    static func feedPet() async throws -> Pet {
+        struct Empty: Encodable {}
+        return try await APIClient.post("/widget/pet/feed", body: Empty())
+    }
+
     // MARK: - Connectivity
 
     struct ConnectivityStatus: Decodable { let status: String }
