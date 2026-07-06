@@ -56,6 +56,20 @@ enum DeskAPI {
         return try await APIClient.post("/api/timer", body: Payload(screen: screen, minutes: minutes))
     }
 
+    // MARK: - Quote
+
+    struct ShuffleResult: Decodable {
+        let quote: String
+        let author: String
+    }
+
+    /// Busts the server-side 24-hour quote cache and returns a brand-new
+    /// random quote immediately, bypassing the normal refresh window.
+    static func shuffleQuote() async throws -> ShuffleResult {
+        struct Empty: Encodable {}
+        return try await APIClient.post("/widget/quote/shuffle", body: Empty())
+    }
+
     // MARK: - Pet
 
     struct Pet: Decodable {

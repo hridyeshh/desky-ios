@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Observation
 
 enum LoadState {
@@ -102,6 +103,34 @@ class DeskViewModel {
             loadState = .loaded(updated)
         } catch {
             powerState = previous // revert on failure
+        }
+    }
+
+    // MARK: - Quote shuffle
+
+    /// True while a shuffle network call is in-flight (disables the button).
+    var isShufflingQuote = false
+
+    /// Busts the server-side quote cache so the Pi display immediately shows a
+    /// brand-new random quote instead of waiting up to 24 hours. Provides a
+    /// subtle haptic kick on success.
+    func shuffleCurrentQuote() async {
+        guard !isShufflingQuote else { return }
+        isShufflingQuote = true
+        defer { isShufflingQuote = false }
+
+        do {
+            _ = try await DeskAPI.shuffleQuote()
+            // Light haptic: confirms the shuffle went through without being
+            // intrusive (the screen update itself is the real confirmation).
+            await MainActor.run {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
+        } catch {
+            // Notify the user something went wrong.
+            await MainActor.run {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
         }
     }
 

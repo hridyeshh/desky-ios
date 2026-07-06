@@ -3,6 +3,9 @@ import SwiftUI
 struct ScreenPreviewSheet: View {
     let screenIndex: Int
     let widget: Widget?
+    /// Passed in when the sheet is opened from ContentView so the shuffle
+    /// button can fire without a separate environment injection.
+    var viewModel: DeskViewModel? = nil
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -41,6 +44,13 @@ struct ScreenPreviewSheet: View {
                 if let w = widget {
                     widgetInfo(w)
                         .padding(.horizontal, 24)
+
+                    // SHUFFLE row — only for the quote widget
+                    if w == .quote, let vm = viewModel {
+                        shuffleRow(vm: vm)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 12)
+                    }
                 } else {
                     emptyInfo
                         .padding(.horizontal, 24)
@@ -163,6 +173,52 @@ struct ScreenPreviewSheet: View {
         )
     }
 
+    // MARK: - Shuffle row (quote widget only)
+
+    private func shuffleRow(vm: DeskViewModel) -> some View {
+        Button {
+            Task { await vm.shuffleCurrentQuote() }
+        } label: {
+            HStack(spacing: 10) {
+                if vm.isShufflingQuote {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.7)
+                        .tint(Theme.amber)
+                        .frame(width: 16, height: 16)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.amber)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(vm.isShufflingQuote ? "SHUFFLING…" : "SHUFFLE QUOTE")
+                        .font(.custom("PressStart2P-Regular", size: 7))
+                        .foregroundStyle(vm.isShufflingQuote ? Theme.muted : Theme.amber)
+                    Text("Force a new random quote on the display now")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.muted)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(Theme.amber.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(
+                        Theme.amber.opacity(vm.isShufflingQuote ? 0.15 : 0.35),
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isShufflingQuote)
+        .animation(.easeInOut(duration: 0.2), value: vm.isShufflingQuote)
+    }
+
     // MARK: - Empty info
 
     private var emptyInfo: some View {
@@ -191,6 +247,10 @@ struct ScreenPreviewSheet: View {
 
 #Preview("With Widget – Weather") {
     ScreenPreviewSheet(screenIndex: 3, widget: .weather)
+}
+
+#Preview("With Widget – Quote") {
+    ScreenPreviewSheet(screenIndex: 1, widget: .quote)
 }
 
 #Preview("Empty Slot") {

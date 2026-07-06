@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct WidgetLibraryView: View {
+    var viewModel: DeskViewModel? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("WIDGETS")
@@ -11,8 +13,17 @@ struct WidgetLibraryView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(Widget.libraryCases, id: \.rawValue) { widget in
-                        WidgetCardView(widget: widget)
+                        if widget == .quote, let vm = viewModel {
+                            WidgetCardView(
+                                widget: widget,
+                                onShuffle: { Task { await vm.shuffleCurrentQuote() } },
+                                isShuffling: vm.isShufflingQuote
+                            )
                             .draggable(widget.rawValue)
+                        } else {
+                            WidgetCardView(widget: widget)
+                                .draggable(widget.rawValue)
+                        }
                     }
                 }
                 .padding(.bottom, 4)

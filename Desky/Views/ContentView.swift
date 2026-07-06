@@ -61,7 +61,7 @@ struct ContentView: View {
                                 .foregroundColor(Theme.muted)
                                 .padding(.horizontal, 16)
 
-                            WidgetLibraryView()
+                            WidgetLibraryView(viewModel: viewModel)
                         }
                         .padding(.bottom, 8)
 
@@ -91,7 +91,7 @@ struct ContentView: View {
             .animation(powerSpring, value: viewModel.isPoweredOn)
             .animation(.easeInOut(duration: 0.4), value: connectivity.isConnected)
             .sheet(item: $previewSlot) { slot in
-                ScreenPreviewSheet(screenIndex: slot.id, widget: slot.widget)
+                ScreenPreviewSheet(screenIndex: slot.id, widget: slot.widget, viewModel: viewModel)
             }
             .overlay {
                 if !splashDone {
